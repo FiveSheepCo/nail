@@ -1,6 +1,12 @@
 # nail
 > A fast static blog engine.
 
+## Installation
+
+```
+cargo install nail-blog
+```
+
 ## Usage
 
 ```sh
