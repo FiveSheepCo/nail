@@ -18,7 +18,7 @@ nail build # build blog for production
   - [x] Create new post
   - [ ] Publish/unpublish post
 - [ ] Building
-  - [ ] Build blog
+  - [x] Build blog
   - [ ] Incremental builds
 - [ ] Local Development
   - [ ] Serve blog locally
