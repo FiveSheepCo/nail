@@ -1,0 +1,8 @@
+<div class="post-overview">
+    {{ #each home.posts }}
+    <div class="post-overview__post">
+        <a class="post-overview__post__link" href="{{ this.link }}">{{ this.title }}</a>
+        <a class="post-overview__post__published">{{ this.published_at }}</a>
+    </div>
+    {{ /each }}
+</div>

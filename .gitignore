@@ -1,1 +1,8 @@
+# Cargo
 /target
+
+# Testing
+/test
+
+# macOS
+.DS_Store

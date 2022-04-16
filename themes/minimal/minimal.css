@@ -1,0 +1,54 @@
+html, body {
+    margin: 0;
+}
+
+body * {
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    padding: 2rem;
+    margin: 0 auto;
+    width: max(400px, 75%);
+}
+
+a {
+    color: hsl(0,0%,25%);
+    text-decoration: none;
+}
+
+a:hover {
+    color: hsl(0,0%,0%);
+    text-decoration: underline;
+}
+
+header {
+    margin-bottom: 1rem;
+}
+
+header .brand {
+    font-size: 2rem;
+}
+
+main {
+    border: 1px solid hsl(0,0%,90%);
+    padding: 1rem;
+}
+
+main h1 {
+    margin: 0;
+}
+
+.post-overview {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+
+blockquote {
+    margin: 0;
+    border-left: 2px solid hsl(0,0%,50%);
+    padding-left: .5rem;
+}

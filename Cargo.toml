@@ -2,8 +2,16 @@
 name = "nail"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = "3.1.8"
+anyhow = { version = "1.0", features = ["backtrace"] }
+chrono = "0.4.19"
+clap = { version = "3.1.8", features = ["derive"] }
+comrak = "0.10"
+crc = "2.1.0"
+handlebars = "4.2.2"
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.5"
