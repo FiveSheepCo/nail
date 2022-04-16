@@ -381,7 +381,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "nail"
+name = "nail-blog"
 version = "0.0.1"
 dependencies = [
  "anyhow",
