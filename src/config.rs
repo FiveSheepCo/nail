@@ -26,6 +26,10 @@ impl Config {
         Ok(toml::from_str(&str)?)
     }
 
+    pub fn to_toml_string(&self) -> anyhow::Result<String> {
+        Ok(toml::to_string_pretty(&self)?)
+    }
+
     pub fn save_to_file(&self, file: &mut File) -> anyhow::Result<()> {
         use std::io::Write;
         let config_toml = toml::to_string_pretty(&self)?;

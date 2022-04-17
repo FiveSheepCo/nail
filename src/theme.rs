@@ -40,22 +40,22 @@ pub struct RenderData {
 }
 
 impl RenderData {
-    pub fn for_post(config: &Config, post: &Post) -> Self {
+    pub fn for_post(config: &Config, post: &Post) -> anyhow::Result<Self> {
         let post = Some(PostRenderData {
             title: post.metadata.title.clone(),
-            content: post.contents.clone(),
+            content: post.format.to_html(&post.contents)?,
         });
         let blog = Some(BlogRenderData {
             name: config.name.clone(),
         });
         let page = None;
         let home = None;
-        Self {
+        Ok(Self {
             post,
             blog,
             page,
             home,
-        }
+        })
     }
 
     pub fn for_index(config: &Config, output_map: &HashMap<String, Post>) -> Self {
