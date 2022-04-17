@@ -2,6 +2,8 @@ use std::fs::File;
 
 use serde::{Deserialize, Serialize};
 
+static CONFIG_FILE_NAME: &str = "config.toml";
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
     pub name: String,
@@ -21,7 +23,7 @@ impl Config {
     }
 
     pub fn load() -> anyhow::Result<Self> {
-        let path = std::env::current_dir()?.join("config.toml");
+        let path = std::env::current_dir()?.join(CONFIG_FILE_NAME);
         let str = std::fs::read_to_string(&path)?;
         Ok(toml::from_str(&str)?)
     }
@@ -30,10 +32,13 @@ impl Config {
         Ok(toml::to_string_pretty(&self)?)
     }
 
-    pub fn save_to_file(&self, file: &mut File) -> anyhow::Result<()> {
+    pub fn save_to_file(&self) -> anyhow::Result<()> {
         use std::io::Write;
         let config_toml = toml::to_string_pretty(&self)?;
-        file.write(config_toml.as_bytes())?;
-        Ok(())
+        let mut file = {
+            let path = std::env::current_dir()?.join(CONFIG_FILE_NAME);
+            File::create(path)?
+        };
+        Ok(file.write_all(config_toml.as_bytes())?)
     }
 }

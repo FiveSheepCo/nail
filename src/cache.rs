@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{build::Post, config::Config};
 
+static CACHE_FILE_NAME: &str = ".cache.toml";
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct HashCache {
     config: u32,
@@ -33,7 +35,7 @@ impl HashCache {
     }
 
     pub fn read_from_file() -> anyhow::Result<Self> {
-        let path = std::env::current_dir()?.join(".cache.toml");
+        let path = std::env::current_dir()?.join(CACHE_FILE_NAME);
         let str = std::fs::read_to_string(&path)?;
         Ok(toml::from_str(&str)?)
     }
@@ -41,7 +43,7 @@ impl HashCache {
     pub fn save_to_file(&self) -> anyhow::Result<()> {
         use std::io::Write;
         let cache_toml = toml::to_string_pretty(&self)?;
-        let path = std::env::current_dir()?.join(".cache.toml");
+        let path = std::env::current_dir()?.join(CACHE_FILE_NAME);
         let mut file = std::fs::File::create(&path)?;
         let _ = file.write(cache_toml.as_bytes())?;
         Ok(())
@@ -55,7 +57,8 @@ impl HashCache {
     }
 
     pub fn mix_config(&mut self, config: &Config) -> anyhow::Result<()> {
-        Ok(self.config = Self::hash_contents(config.to_toml_string()?))
+        self.config = Self::hash_contents(config.to_toml_string()?);
+        Ok(())
     }
 
     pub fn diff(&self, hashes: &HashCache) -> HashDiff {
@@ -78,7 +81,7 @@ impl HashCache {
                     },
                 ))
             }
-            for key in b.keys().filter(|k| !a.contains_key(k.clone())) {
+            for key in b.keys().filter(|&k| !a.contains_key(k)) {
                 diffs.push((key.to_owned(), FileDiffMode::Added));
             }
             diffs

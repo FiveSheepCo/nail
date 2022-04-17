@@ -12,7 +12,7 @@ pub struct Scaffold;
 
 impl Scaffold {
     pub fn create_post(name: String, format: PostFormat, force: bool) -> anyhow::Result<()> {
-        let snake_case_name = name.replace(" ", "_").to_ascii_lowercase();
+        let snake_case_name = name.replace(' ', "_").to_ascii_lowercase();
         let post_path = std::env::current_dir()?.join("posts").join(format!(
             "{}.{}",
             &snake_case_name,
@@ -27,7 +27,7 @@ impl Scaffold {
         // Write post
         {
             let mut file = File::create(post_path)?;
-            file.write(format.as_template(&name).as_bytes())?;
+            file.write_all(format.as_template(&name).as_bytes())?;
         }
 
         println!("Created post `{}` in `./posts/{}`", &name, &snake_case_name);
@@ -36,7 +36,7 @@ impl Scaffold {
     }
 
     pub fn create_project(name: String, force: bool) -> anyhow::Result<()> {
-        let snake_case_name = name.replace(" ", "_").to_ascii_lowercase();
+        let snake_case_name = name.replace(' ', "_").to_ascii_lowercase();
         let blog_dir = Path::new(&snake_case_name);
 
         // Check if directory exists
@@ -50,12 +50,7 @@ impl Scaffold {
         create_dir_all(blog_dir.join("themes"))?;
 
         // Write default config
-        let config = Config::new(&name);
-        let config_path = blog_dir.join("config.toml");
-        {
-            let mut file = File::create(config_path)?;
-            config.save_to_file(&mut file)?;
-        }
+        Config::new(&name).save_to_file()?;
 
         println!(
             "Created project `{}` in directory `./{}`",

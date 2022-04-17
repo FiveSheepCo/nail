@@ -33,7 +33,7 @@ impl Engine {
     pub fn new(config: Config, theme: Theme) -> anyhow::Result<Self> {
         let last_cache = HashCache::read_from_file()
             .ok()
-            .unwrap_or_else(|| HashCache::empty());
+            .unwrap_or_else(HashCache::empty);
         let current_cache = {
             let mut cache = HashCache::empty();
             cache.mix_config(&config)?;
@@ -71,13 +71,13 @@ impl Engine {
         for post in posts.into_iter() {
             let file_name = format!(
                 "{}.html",
-                post.metadata.title.replace(" ", "_").to_ascii_lowercase()
+                post.metadata.title.replace(' ', "_").to_ascii_lowercase()
             );
             let file_path = dirs.build_post_dir.join(&file_name);
             let data = RenderData::for_post(&self.config, &post)?;
             let post_page = self.theme.render_post(data)?;
             let mut file = File::create(file_path)?;
-            file.write(post_page.as_bytes())?;
+            file.write_all(post_page.as_bytes())?;
             output_map.insert(file_name, post);
         }
         // Generate index.html
@@ -86,13 +86,13 @@ impl Engine {
             let index_page = self.theme.render_index(data)?;
             let file_path = dirs.build_dir.join("index.html");
             let mut file = File::create(file_path)?;
-            file.write(index_page.as_bytes())?;
+            file.write_all(index_page.as_bytes())?;
         }
         // Create style.css
         {
             let file_path = dirs.build_dir.join("style.css");
             let mut file = File::create(file_path)?;
-            file.write(self.theme.css.as_bytes())?;
+            file.write_all(self.theme.css.as_bytes())?;
         }
         Ok(())
     }

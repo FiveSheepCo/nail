@@ -46,7 +46,7 @@ impl PostFormat {
                     bail!(err_str)
                 }
                 let meta_part = line
-                    .split_once("(")
+                    .split_once('(')
                     .context(err_str)?
                     .1
                     .trim_end()
@@ -57,7 +57,7 @@ impl PostFormat {
                     .iter()
                     .rev()
                     .collect::<String>();
-                let (key, value) = meta_part.split_once(":").context(err_str)?;
+                let (key, value) = meta_part.split_once(':').context(err_str)?;
                 let key = key.trim();
                 let value = value.trim();
                 Ok((key.to_string(), value.to_string()))
@@ -78,7 +78,7 @@ impl PostFormat {
                     .iter()
                     .rev()
                     .collect::<String>();
-                let (key, value) = meta_part.split_once(":").context(err_str)?;
+                let (key, value) = meta_part.split_once(':').context(err_str)?;
                 let key = key.trim();
                 let value = value.trim();
                 Ok((key.to_string(), value.to_string()))

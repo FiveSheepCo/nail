@@ -64,7 +64,7 @@ impl RenderData {
             name: config.name.clone(),
         });
         let page = None;
-        let home = Some(Self::build_home_data(&output_map));
+        let home = Some(Self::build_home_data(output_map));
         Self {
             post,
             blog,
