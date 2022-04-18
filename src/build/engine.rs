@@ -13,7 +13,7 @@ struct DirectoryStructure {
     pub build_post_dir: PathBuf,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Post {
     pub format: PostFormat,
     pub filename: PathBuf,
@@ -28,6 +28,12 @@ pub struct Engine {
     config: Config,
     theme: Theme,
 }
+
+// #[derive(Debug)]
+// pub struct Build {
+//     index: String,
+//     posts: Vec<(Post, PathBuf)>,
+// }
 
 impl Engine {
     pub fn new(config: Config, theme: Theme) -> anyhow::Result<Self> {
@@ -58,6 +64,15 @@ impl Engine {
         diff.sync()?;
         // Save cache
         self.current_cache.save_to_file()?;
+        // Populate output map
+        let mut output_map = HashMap::<String, Post>::new();
+        for post in &posts {
+            let file_name = format!(
+                "{}.html",
+                post.metadata.title.replace(' ', "_").to_ascii_lowercase()
+            );
+            output_map.insert(file_name, post.clone());
+        }
         // Collect post that actually have to be rendered
         let posts = {
             let paths = diff.changed_post_paths();
@@ -66,7 +81,6 @@ impl Engine {
                 .filter(|post| paths.contains(&post.filename))
                 .collect::<Vec<_>>()
         };
-        let mut output_map = HashMap::<String, Post>::new();
         // Generate posts
         for post in posts.into_iter() {
             let file_name = format!(
@@ -78,14 +92,13 @@ impl Engine {
             let post_page = self.theme.render_post(data)?;
             let mut file = File::create(file_path)?;
             file.write_all(post_page.as_bytes())?;
-            output_map.insert(file_name, post);
         }
         // Generate index.html
-        if diff.should_rerender_index_page() {
+        let index_file_path = dirs.build_dir.join("index.html");
+        if diff.should_rerender_index_page() || !index_file_path.exists() {
             let data = RenderData::for_index(&self.config, &output_map);
             let index_page = self.theme.render_index(data)?;
-            let file_path = dirs.build_dir.join("index.html");
-            let mut file = File::create(file_path)?;
+            let mut file = File::create(index_file_path)?;
             file.write_all(index_page.as_bytes())?;
         }
         // Create style.css

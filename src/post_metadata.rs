@@ -1,6 +1,6 @@
 use super::PostFormat;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PostMetadata {
     pub title: String,
     pub published: bool,

@@ -50,7 +50,7 @@ impl Scaffold {
         create_dir_all(blog_dir.join("themes"))?;
 
         // Write default config
-        Config::new(&name).save_to_file()?;
+        Config::new(&name).save_to_file(&blog_dir)?;
 
         println!(
             "Created project `{}` in directory `./{}`",

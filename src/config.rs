@@ -1,4 +1,4 @@
-use std::fs::File;
+use std::{fs::File, path::Path};
 
 use serde::{Deserialize, Serialize};
 
@@ -32,11 +32,11 @@ impl Config {
         Ok(toml::to_string_pretty(&self)?)
     }
 
-    pub fn save_to_file(&self) -> anyhow::Result<()> {
+    pub fn save_to_file<P>(&self, path: P) -> anyhow::Result<()> where P: AsRef<Path> {
         use std::io::Write;
         let config_toml = toml::to_string_pretty(&self)?;
         let mut file = {
-            let path = std::env::current_dir()?.join(CONFIG_FILE_NAME);
+            let path = path.as_ref().join(CONFIG_FILE_NAME);
             File::create(path)?
         };
         Ok(file.write_all(config_toml.as_bytes())?)

@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use crate::post_metadata::PostMetadata;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum PostFormat {
     Markdown,
     Html,
