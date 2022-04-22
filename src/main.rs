@@ -71,8 +71,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Command::Build { theme } => {
             let config = Config::load()?;
             let theme = Theme::load(theme)?;
-            let mut engine = Engine::new(config, theme)?;
-            engine.build()?;
+            let bundle = {
+                let mut engine = Engine::new(config, theme)?;
+                engine.build()?
+            };
+            bundle.write_to_disk()?;
         }
     }
     Ok(())

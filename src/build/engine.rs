@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::File, io::Write, path::PathBuf};
+use std::{collections::HashMap, io::Write, path::PathBuf};
 
 use crate::{
     cache::HashCache,
@@ -21,6 +21,13 @@ pub struct Post {
     pub contents: String,
 }
 
+impl Post {
+    pub fn get_final_file_name(&self) -> String {
+        let snake_case_name = self.metadata.title.replace(' ', "_").to_ascii_lowercase();
+        format!("{}.html", snake_case_name)
+    }
+}
+
 #[derive(Debug)]
 pub struct Engine {
     last_cache: HashCache,
@@ -29,11 +36,52 @@ pub struct Engine {
     theme: Theme,
 }
 
-// #[derive(Debug)]
-// pub struct Build {
-//     index: String,
-//     posts: Vec<(Post, PathBuf)>,
-// }
+#[derive(Debug)]
+pub struct BuildFile {
+    path: PathBuf,
+    contents: String,
+}
+
+impl BuildFile {
+    pub fn new<S>(path: PathBuf, contents: S) -> Self
+    where
+        S: ToString,
+    {
+        Self {
+            path,
+            contents: contents.to_string(),
+        }
+    }
+
+    pub fn write_to_disk(&self) -> anyhow::Result<()> {
+        use anyhow::Context;
+        let mut file = std::fs::File::create(&self.path)?;
+        file.write_all(self.contents.as_bytes())
+            .context(format!("Unable to write file: {:?}", self.path))
+    }
+}
+
+#[derive(Debug)]
+pub struct Bundle {
+    files: Vec<BuildFile>,
+}
+
+impl Bundle {
+    pub fn new() -> Self {
+        Self { files: Vec::new() }
+    }
+
+    pub fn add_file(&mut self, file: BuildFile) {
+        self.files.push(file)
+    }
+
+    pub fn write_to_disk(&self) -> anyhow::Result<()> {
+        for file in &self.files {
+            file.write_to_disk()?;
+        }
+        Ok(())
+    }
+}
 
 impl Engine {
     pub fn new(config: Config, theme: Theme) -> anyhow::Result<Self> {
@@ -53,7 +101,7 @@ impl Engine {
         })
     }
 
-    pub fn build(&mut self) -> anyhow::Result<()> {
+    pub fn build(&mut self) -> anyhow::Result<Bundle> {
         // Build directory structure
         let dirs = Self::create_output_directories()?;
         // Collect posts
@@ -67,47 +115,42 @@ impl Engine {
         // Populate output map
         let mut output_map = HashMap::<String, Post>::new();
         for post in &posts {
-            let file_name = format!(
-                "{}.html",
-                post.metadata.title.replace(' ', "_").to_ascii_lowercase()
-            );
-            output_map.insert(file_name, post.clone());
+            output_map.insert(post.get_final_file_name(), post.clone());
         }
         // Collect post that actually have to be rendered
         let posts = {
             let paths = diff.changed_post_paths();
             posts
                 .into_iter()
-                .filter(|post| paths.contains(&post.filename))
+                .filter(|post| {
+                    let file_path = dirs.build_post_dir.join(post.get_final_file_name());
+                    paths.contains(&post.filename) || !file_path.exists()
+                })
                 .collect::<Vec<_>>()
         };
+        // Generate bundle
+        let mut bundle = Bundle::new();
         // Generate posts
         for post in posts.into_iter() {
-            let file_name = format!(
-                "{}.html",
-                post.metadata.title.replace(' ', "_").to_ascii_lowercase()
-            );
+            let file_name = post.get_final_file_name();
             let file_path = dirs.build_post_dir.join(&file_name);
             let data = RenderData::for_post(&self.config, &post)?;
             let post_page = self.theme.render_post(data)?;
-            let mut file = File::create(file_path)?;
-            file.write_all(post_page.as_bytes())?;
+            bundle.add_file(BuildFile::new(file_path, post_page));
         }
         // Generate index.html
         let index_file_path = dirs.build_dir.join("index.html");
         if diff.should_rerender_index_page() || !index_file_path.exists() {
             let data = RenderData::for_index(&self.config, &output_map);
             let index_page = self.theme.render_index(data)?;
-            let mut file = File::create(index_file_path)?;
-            file.write_all(index_page.as_bytes())?;
+            bundle.add_file(BuildFile::new(index_file_path, index_page));
         }
         // Create style.css
         {
             let file_path = dirs.build_dir.join("style.css");
-            let mut file = File::create(file_path)?;
-            file.write_all(self.theme.css.as_bytes())?;
+            bundle.add_file(BuildFile::new(file_path, &self.theme.css));
         }
-        Ok(())
+        Ok(bundle)
     }
 
     fn create_output_directories() -> anyhow::Result<DirectoryStructure> {

@@ -32,7 +32,10 @@ impl Config {
         Ok(toml::to_string_pretty(&self)?)
     }
 
-    pub fn save_to_file<P>(&self, path: P) -> anyhow::Result<()> where P: AsRef<Path> {
+    pub fn save_to_file<P>(&self, path: P) -> anyhow::Result<()>
+    where
+        P: AsRef<Path>,
+    {
         use std::io::Write;
         let config_toml = toml::to_string_pretty(&self)?;
         let mut file = {
