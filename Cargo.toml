@@ -16,10 +16,11 @@ bench = false
 
 [dependencies]
 anyhow = { version = "1.0", features = ["backtrace"] }
-chrono = "0.4.19"
-clap = { version = "3.1.8", features = ["derive"] }
-comrak = "0.10"
-crc = "2.1.0"
-handlebars = "4.2.2"
+clap = { version = "4.0", features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1.21.2", features = ["full"] }
+chrono = "0.4"
+comrak = "0.14"
+crc = "3.0"
+handlebars = "4.3"
 toml = "0.5"
