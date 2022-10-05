@@ -1,13 +1,21 @@
-use std::{fs::File, path::Path};
+use std::{borrow::Cow, fs::File, path::Path};
 
 use serde::{Deserialize, Serialize};
 
+use crate::theme::Theme;
+
 static CONFIG_FILE_NAME: &str = "config.toml";
 
-#[derive(Serialize, Deserialize, Debug)]
+fn default_theme() -> Cow<'static, str> {
+    "minimal".into()
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
     pub name: String,
     pub title: String,
+    #[serde(default = "default_theme")]
+    pub theme: Cow<'static, str>,
     #[serde(default)]
     pub __is_dev_mode: bool,
 }
@@ -21,6 +29,7 @@ impl Config {
         Self {
             name: name.to_string(),
             title: name.to_string(),
+            theme: default_theme(),
             __is_dev_mode: false,
         }
     }
@@ -29,6 +38,10 @@ impl Config {
         let path = std::env::current_dir()?.join(CONFIG_FILE_NAME);
         let str = std::fs::read_to_string(&path)?;
         Ok(toml::from_str(&str)?)
+    }
+
+    pub fn load_theme(&self) -> anyhow::Result<Theme> {
+        Theme::load(&self.theme)
     }
 
     pub fn to_toml_string(&self) -> anyhow::Result<String> {

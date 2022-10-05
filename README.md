@@ -28,4 +28,5 @@ nail build # build blog for production
   - [x] Incremental builds
 - [ ] Local Development
   - [x] Serve blog locally
+  - [x] Rebuild on change
   - [ ] Live reload
