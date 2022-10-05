@@ -8,6 +8,8 @@ static CONFIG_FILE_NAME: &str = "config.toml";
 pub struct Config {
     pub name: String,
     pub title: String,
+    #[serde(default)]
+    pub __is_dev_mode: bool,
 }
 
 impl Config {
@@ -19,6 +21,7 @@ impl Config {
         Self {
             name: name.to_string(),
             title: name.to_string(),
+            __is_dev_mode: false,
         }
     }
 

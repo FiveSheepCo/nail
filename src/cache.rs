@@ -134,4 +134,14 @@ impl HashDiff {
             .any(|(_, mode)| mode != &FileDiffMode::Unchanged);
         config_changed || posts_changed
     }
+
+    pub fn any_changed(&self) -> bool {
+        if self.config == FileDiffMode::Unchanged {
+            return false;
+        }
+        return self
+            .posts
+            .iter()
+            .all(|(_, diff)| diff == &FileDiffMode::Unchanged);
+    }
 }

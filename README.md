@@ -19,7 +19,7 @@ nail build # build blog for production
 
 ## Roadmap
 
-- [ ] Management
+- [ ] Blog Management
   - [x] Create new blog
   - [x] Create new post
   - [ ] Publish/unpublish post
@@ -27,5 +27,5 @@ nail build # build blog for production
   - [x] Build blog
   - [x] Incremental builds
 - [ ] Local Development
-  - [ ] Serve blog locally
+  - [x] Serve blog locally
   - [ ] Live reload

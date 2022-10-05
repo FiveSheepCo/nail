@@ -34,21 +34,21 @@ pub struct Engine {
     current_cache: HashCache,
     config: Config,
     theme: Theme,
+    bypass_cache: bool,
 }
 
 #[derive(Debug)]
 pub struct BuildFile {
     path: PathBuf,
+    virtual_path: String,
     contents: String,
 }
 
 impl BuildFile {
-    pub fn new<S>(path: PathBuf, contents: S) -> Self
-    where
-        S: ToString,
-    {
+    pub fn new(path: PathBuf, virtual_path: impl ToString, contents: impl ToString) -> Self {
         Self {
             path,
+            virtual_path: virtual_path.to_string(),
             contents: contents.to_string(),
         }
     }
@@ -58,6 +58,14 @@ impl BuildFile {
         let mut file = std::fs::File::create(&self.path)?;
         file.write_all(self.contents.as_bytes())
             .context(format!("Unable to write file: {:?}", self.path))
+    }
+
+    pub fn virtual_path(&self) -> &str {
+        &self.virtual_path
+    }
+
+    pub fn contents(&self) -> &str {
+        &self.contents
     }
 }
 
@@ -81,16 +89,28 @@ impl Bundle {
         }
         Ok(())
     }
+
+    pub fn iter(&self) -> std::slice::Iter<'_, BuildFile> {
+        self.files.iter()
+    }
 }
 
 impl Engine {
-    pub fn new(config: Config, theme: Theme) -> anyhow::Result<Self> {
-        let last_cache = HashCache::read_from_file()
-            .ok()
-            .unwrap_or_else(HashCache::empty);
+    pub fn new(config: Config, theme: Theme, bypass_cache: bool) -> anyhow::Result<Self> {
+        let last_cache = {
+            if bypass_cache {
+                HashCache::empty()
+            } else {
+                HashCache::read_from_file()
+                    .ok()
+                    .unwrap_or_else(HashCache::empty)
+            }
+        };
         let current_cache = {
             let mut cache = HashCache::empty();
-            cache.mix_config(&config)?;
+            if !bypass_cache {
+                cache.mix_config(&config)?;
+            }
             cache
         };
         Ok(Self {
@@ -98,6 +118,7 @@ impl Engine {
             theme,
             last_cache,
             current_cache,
+            bypass_cache,
         })
     }
 
@@ -108,10 +129,14 @@ impl Engine {
         let posts = self.gather_posts()?;
         // Generate difference between last and current build
         let diff = self.last_cache.diff(&self.current_cache);
-        // Synchronize changes (actually delete removed files, etc.)
-        diff.sync()?;
-        // Save cache
-        self.current_cache.save_to_file()?;
+        if !self.bypass_cache {
+            // Synchronize changes (actually delete removed files, etc.)
+            diff.sync()?;
+            // Save cache if different
+            if diff.any_changed() {
+                self.current_cache.save_to_file()?;
+            }
+        }
         // Populate output map
         let mut output_map = HashMap::<String, Post>::new();
         for post in &posts {
@@ -119,7 +144,13 @@ impl Engine {
         }
         // Collect post that actually have to be rendered
         let posts = {
-            let paths = diff.changed_post_paths();
+            let paths = {
+                if self.bypass_cache {
+                    posts.iter().map(|post| post.filename.clone()).collect()
+                } else {
+                    diff.changed_post_paths()
+                }
+            };
             posts
                 .into_iter()
                 .filter(|post| {
@@ -134,21 +165,22 @@ impl Engine {
         for post in posts.into_iter() {
             let file_name = post.get_final_file_name();
             let file_path = dirs.build_post_dir.join(&file_name);
+            let virtual_path = format!("/posts/{}", file_name);
             let data = RenderData::for_post(&self.config, &post)?;
             let post_page = self.theme.render_post(data)?;
-            bundle.add_file(BuildFile::new(file_path, post_page));
+            bundle.add_file(BuildFile::new(file_path, virtual_path, post_page));
         }
         // Generate index.html
         let index_file_path = dirs.build_dir.join("index.html");
-        if diff.should_rerender_index_page() || !index_file_path.exists() {
+        if self.bypass_cache || (diff.should_rerender_index_page() || !index_file_path.exists()) {
             let data = RenderData::for_index(&self.config, &output_map);
             let index_page = self.theme.render_index(data)?;
-            bundle.add_file(BuildFile::new(index_file_path, index_page));
+            bundle.add_file(BuildFile::new(index_file_path, "/", index_page));
         }
         // Create style.css
         {
             let file_path = dirs.build_dir.join("style.css");
-            bundle.add_file(BuildFile::new(file_path, &self.theme.css));
+            bundle.add_file(BuildFile::new(file_path, "/style.css", &self.theme.css));
         }
         Ok(bundle)
     }

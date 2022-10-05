@@ -4,34 +4,34 @@ use serde::Serialize;
 
 use crate::{build::Post, config::Config};
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct BlogRenderData {
     name: String,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct PostRenderData {
     title: String,
     content: String,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct PageRenderData {
     content: String,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 struct PostIndex {
     title: String,
     link: String,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct HomeRenderData {
     posts: Vec<PostIndex>,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct RenderData {
     blog: Option<BlogRenderData>,
     post: Option<PostRenderData>,
@@ -64,7 +64,7 @@ impl RenderData {
             name: config.name.clone(),
         });
         let page = None;
-        let home = Some(Self::build_home_data(output_map));
+        let home = Some(Self::build_home_data(config, output_map));
         Self {
             post,
             blog,
@@ -77,10 +77,10 @@ impl RenderData {
         self.page = Some(PageRenderData { content });
     }
 
-    fn build_home_data(map: &HashMap<String, Post>) -> HomeRenderData {
+    fn build_home_data(config: &Config, map: &HashMap<String, Post>) -> HomeRenderData {
         let mut post_index_data = map
             .iter()
-            .filter(|(_, post)| post.metadata.published)
+            .filter(|(_, post)| post.metadata.published || config.__is_dev_mode)
             .map(|(key, post)| (key, post))
             .collect::<Vec<_>>();
         post_index_data.sort_by(|a, b| {
@@ -90,9 +90,18 @@ impl RenderData {
         });
         let post_index_data = post_index_data
             .into_iter()
-            .map(|(key, post)| PostIndex {
-                title: post.metadata.title.clone(),
-                link: format!("/posts/{}", key),
+            .map(|(key, post)| {
+                let post_title_suffix = {
+                    if !post.metadata.published {
+                        " (Unpublished)"
+                    } else {
+                        ""
+                    }
+                };
+                PostIndex {
+                    title: format!("{}{}", post.metadata.title, post_title_suffix),
+                    link: format!("/posts/{}", key),
+                }
             })
             .collect::<Vec<_>>();
         HomeRenderData {
